@@ -1,5 +1,8 @@
 import "./style.css";
 import accounts from "./accounts.js";
+import { formatDistanceToNow, format } from 'date-fns';
+import { es } from 'date-fns/locale';
+
 document.querySelector("#app").innerHTML = `
     <nav>
       <p class="welcome">Log in to get started</p>
@@ -134,16 +137,20 @@ createUsernames(accounts);
 let currentAccount;
 
 const formatDate = function(date) {
-  const calcDaysPassed = (date1, date2) => 
-    Math.round(Math.abs((date2 - date1) / (1000 * 60 * 60 * 24)));
+  // Para fechas recientes, mostrar "hace X tiempo"
+  const relativeTime = formatDistanceToNow(date, { 
+    locale: es,
+    addSuffix: true 
+  });
 
-  const daysPassed = calcDaysPassed(new Date(), date);
+  // Para el formato completo de fecha y hora
+  const fullDate = format(date, "d 'de' MMMM 'de' yyyy, HH:mm", {
+    locale: es
+  });
 
-  if (daysPassed === 0) return 'Hoy';
-  if (daysPassed === 1) return 'Ayer';
-  if (daysPassed <= 7) return `Hace ${daysPassed} días`;
-
-  return new Intl.DateTimeFormat('es-ES').format(date);
+  // Si la fecha es de hace menos de 7 días, mostrar el tiempo relativo
+  const daysDiff = Math.round((new Date() - date) / (1000 * 60 * 60 * 24));
+  return daysDiff <= 7 ? relativeTime : fullDate;
 };
 
 btnLogin.addEventListener("click", function (e) {
@@ -211,14 +218,10 @@ const displayBalance = function (movements) {
   // actualizamos el DOM:
   labelBalance.textContent = `${balance.toFixed(2)} €`;
 
-  // Actualizar la fecha del balance
-  labelDate.textContent = new Intl.DateTimeFormat('es-ES', {
-    hour: '2-digit',
-    minute: '2-digit',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(new Date());
+  // Actualizar la fecha del balance con formato completo
+  labelDate.textContent = format(new Date(), "'Actualizado el' d 'de' MMMM 'de' yyyy, HH:mm", {
+    locale: es
+  });
 };
 const displaySummary = function (movements) {
   const sumIn = movements
