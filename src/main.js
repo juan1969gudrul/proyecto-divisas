@@ -245,6 +245,36 @@ btnTransfer.addEventListener('click', function (e) {
   }
 });
 
+// Implementar solicitud de préstamo
+btnLoan.addEventListener('click', function (e) {
+  e.preventDefault();
+
+  const amount = Number(inputLoanAmount.value);
+  const currentBalance = currentAccount.movements.reduce((acc, mov) => acc + mov, 0);
+  const maxLoanAmount = currentBalance * 2; // 200% del balance actual
+
+  // Limpiar campo del formulario
+  inputLoanAmount.value = '';
+
+  // Validaciones
+  if (amount <= 0) {
+    alert('La cantidad solicitada debe ser positiva');
+    return;
+  }
+
+  if (amount > maxLoanAmount) {
+    alert(`El préstamo máximo permitido es de ${maxLoanAmount.toFixed(2)}€ (200% de tu balance actual)`);
+    return;
+  }
+
+  // Aprobar y procesar el préstamo
+  currentAccount.movements.push(amount);
+
+  // Actualizar UI
+  updateUI(currentAccount);
+  alert('Préstamo aprobado y depositado en tu cuenta');
+});
+
 // Implementar cierre de cuenta
 btnClose.addEventListener("click", function (e) {
   e.preventDefault();
