@@ -131,40 +131,42 @@ const createUsernames = function (accounts) {
   });
 };
 createUsernames(accounts);
+let currentAccount;
+
 btnLogin.addEventListener("click", function (e) {
   // evitar que el formulario se envíe
   e.preventDefault();
   // recojo el username y el pin y los comparo con los datos de las cuentas
   const inputUsername = inputLoginUsername.value;
   const inputPin = Number(inputLoginPin.value);
-  const account = accounts.find(
+  currentAccount = accounts.find(
     (account) => account.username === inputUsername
   );
   // .find((account) => account.pin === inputPin);
   // lo anterior no funciona porque account ya es un array
-  if (account && account.pin === inputPin) {
+  if (currentAccount && currentAccount.pin === inputPin) {
     // MÁS CONCISO:  if (account?.pin === inputPin) {
     // si el usuario y el pin son correctos
     // mensaje de bienvenida y que se vea la aplicación
     containerApp.style.opacity = 1;
-    labelWelcome.textContent = `Welcome back, ${account.owner.split(" ")[0]}`;
+    labelWelcome.textContent = `Welcome back, ${currentAccount.owner.split(" ")[0]}`;
     // limpiar formulario
     inputLoginUsername.value = inputLoginPin.value = "";
     // cargar los datos (movimientos de la cuenta)
-    updateUI(account);
+    updateUI(currentAccount);
   } else {
     console.log("login incorrecto");
   }
 });
-const updateUI = function ({ movements }) {
+const updateUI = function (account) {
   // const {movements} = account.movements
   // mostrar los movimientos de la cuenta
-  displayMovements(movements);
+  displayMovements(account.movements);
   // mostrar el balance de la cuenta
-  displayBalance(movements);
+  displayBalance(account.movements);
   // mostrar el total de los movimientos de la cuenta
   // ingresos y gastos
-  displaySummary(movements);
+  displaySummary(account.movements);
 };
 const displayMovements = function (movements) {
   // vaciamos el HTML
@@ -203,3 +205,27 @@ const displaySummary = function (movements) {
     .reduce((total, movement) => total + movement, 0);
   labelSumOut.textContent = `${sumOut.toFixed(2)} €`;
 };
+
+// Implementar cierre de cuenta
+btnClose.addEventListener("click", function (e) {
+  e.preventDefault();
+
+  // Verificar credenciales
+  if (
+    inputCloseUsername.value === currentAccount.username &&
+    Number(inputClosePin.value) === currentAccount.pin
+  ) {
+    // Encontrar el índice de la cuenta en el array de cuentas
+    const index = accounts.findIndex(
+      acc => acc.username === currentAccount.username
+    );
+
+    // Eliminar la cuenta del array
+    accounts.splice(index, 1);
+
+    // Ocultar UI y limpiar campos
+    containerApp.style.opacity = 0;
+    labelWelcome.textContent = 'Log in to get started';
+    inputCloseUsername.value = inputClosePin.value = '';
+  }
+});
