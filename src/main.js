@@ -206,6 +206,45 @@ const displaySummary = function (movements) {
   labelSumOut.textContent = `${sumOut.toFixed(2)} €`;
 };
 
+// Implementar transferencias
+btnTransfer.addEventListener('click', function (e) {
+  e.preventDefault();
+
+  const amount = Number(inputTransferAmount.value);
+  const receiverAccount = accounts.find(
+    acc => acc.username === inputTransferTo.value
+  );
+
+  // Limpiar campos del formulario
+  inputTransferAmount.value = inputTransferTo.value = '';
+
+  // Validaciones
+  if (
+    amount > 0 && // Validar que la cantidad sea positiva
+    receiverAccount && // Validar que la cuenta destino exista
+    currentAccount.movements.reduce((acc, mov) => acc + mov, 0) >= amount && // Validar saldo suficiente
+    receiverAccount?.username !== currentAccount.username // Validar que no sea transferencia a sí mismo
+  ) {
+    // Realizar la transferencia
+    currentAccount.movements.push(-amount);
+    receiverAccount.movements.push(amount);
+
+    // Actualizar UI
+    updateUI(currentAccount);
+  } else {
+    // Mostrar mensaje de error según el caso
+    if (amount <= 0) {
+      alert('La cantidad debe ser positiva');
+    } else if (!receiverAccount) {
+      alert('La cuenta destino no existe');
+    } else if (currentAccount.movements.reduce((acc, mov) => acc + mov, 0) < amount) {
+      alert('No tienes suficiente saldo');
+    } else if (receiverAccount.username === currentAccount.username) {
+      alert('No puedes transferir dinero a tu propia cuenta');
+    }
+  }
+});
+
 // Implementar cierre de cuenta
 btnClose.addEventListener("click", function (e) {
   e.preventDefault();
