@@ -133,6 +133,19 @@ const createUsernames = function (accounts) {
 createUsernames(accounts);
 let currentAccount;
 
+const formatDate = function(date) {
+  const calcDaysPassed = (date1, date2) => 
+    Math.round(Math.abs((date2 - date1) / (1000 * 60 * 60 * 24)));
+
+  const daysPassed = calcDaysPassed(new Date(), date);
+
+  if (daysPassed === 0) return 'Hoy';
+  if (daysPassed === 1) return 'Ayer';
+  if (daysPassed <= 7) return `Hace ${daysPassed} días`;
+
+  return new Intl.DateTimeFormat('es-ES').format(date);
+};
+
 btnLogin.addEventListener("click", function (e) {
   // evitar que el formulario se envíe
   e.preventDefault();
@@ -174,15 +187,18 @@ const displayMovements = function (movements) {
   // recorremos el array de movimientos
   movements.forEach((mov, i) => {
     // creamos el html para cada movimiento y lo guardamos en una variable
-    const type = mov > 0 ? "deposit" : "withdrawal";
+    const type = mov.amount > 0 ? "deposit" : "withdrawal";
+    
+    const date = formatDate(mov.date);
+
     // creamos el HTML
     const html = `
       <div class="movements__row">
         <div class="movements__type movements__type--${type}">${i + 1} ${
       type === "withdrawal" ? "withdrawal" : "deposit"
     }</div>
-        <div class="movements__date">3 days ago</div>
-        <div class="movements__value">${mov.toFixed(2)}€</div>
+        <div class="movements__date">${date}</div>
+        <div class="movements__value">${mov.amount.toFixed(2)}€</div>
       </div>
     `;
     // insertamos el HTML en el DOM
@@ -191,19 +207,29 @@ const displayMovements = function (movements) {
 };
 const displayBalance = function (movements) {
   // calculamos suma de ingresos y retiradas de efectivo
-  const balance = movements.reduce((total, movement) => total + movement, 0);
+  const balance = movements.reduce((total, movement) => total + movement.amount, 0);
   // actualizamos el DOM:
   labelBalance.textContent = `${balance.toFixed(2)} €`;
+
+  // Actualizar la fecha del balance
+  labelDate.textContent = new Intl.DateTimeFormat('es-ES', {
+    hour: '2-digit',
+    minute: '2-digit',
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(new Date());
 };
 const displaySummary = function (movements) {
   const sumIn = movements
-    .filter((movement) => movement > 0)
-    .reduce((total, movement) => total + movement, 0);
+    .filter((movement) => movement.amount > 0)
+    .reduce((total, movement) => total + movement.amount, 0);
   labelSumIn.textContent = `${sumIn.toFixed(2)} €`;
+  
   const sumOut = movements
-    .filter((movement) => movement < 0)
-    .reduce((total, movement) => total + movement, 0);
-  labelSumOut.textContent = `${sumOut.toFixed(2)} €`;
+    .filter((movement) => movement.amount < 0)
+    .reduce((total, movement) => total + movement.amount, 0);
+  labelSumOut.textContent = `${Math.abs(sumOut).toFixed(2)} €`;
 };
 
 // Implementar transferencias
@@ -222,12 +248,12 @@ btnTransfer.addEventListener('click', function (e) {
   if (
     amount > 0 && // Validar que la cantidad sea positiva
     receiverAccount && // Validar que la cuenta destino exista
-    currentAccount.movements.reduce((acc, mov) => acc + mov, 0) >= amount && // Validar saldo suficiente
+    currentAccount.movements.reduce((acc, mov) => acc + mov.amount, 0) >= amount && // Validar saldo suficiente
     receiverAccount?.username !== currentAccount.username // Validar que no sea transferencia a sí mismo
   ) {
     // Realizar la transferencia
-    currentAccount.movements.push(-amount);
-    receiverAccount.movements.push(amount);
+    currentAccount.movements.push({ amount: -amount, date: new Date() });
+    receiverAccount.movements.push({ amount: amount, date: new Date() });
 
     // Actualizar UI
     updateUI(currentAccount);
@@ -237,7 +263,7 @@ btnTransfer.addEventListener('click', function (e) {
       alert('La cantidad debe ser positiva');
     } else if (!receiverAccount) {
       alert('La cuenta destino no existe');
-    } else if (currentAccount.movements.reduce((acc, mov) => acc + mov, 0) < amount) {
+    } else if (currentAccount.movements.reduce((acc, mov) => acc + mov.amount, 0) < amount) {
       alert('No tienes suficiente saldo');
     } else if (receiverAccount.username === currentAccount.username) {
       alert('No puedes transferir dinero a tu propia cuenta');
@@ -250,7 +276,7 @@ btnLoan.addEventListener('click', function (e) {
   e.preventDefault();
 
   const amount = Number(inputLoanAmount.value);
-  const currentBalance = currentAccount.movements.reduce((acc, mov) => acc + mov, 0);
+  const currentBalance = currentAccount.movements.reduce((acc, mov) => acc + mov.amount, 0);
   const maxLoanAmount = currentBalance * 2; // 200% del balance actual
 
   // Limpiar campo del formulario
@@ -268,7 +294,7 @@ btnLoan.addEventListener('click', function (e) {
   }
 
   // Aprobar y procesar el préstamo
-  currentAccount.movements.push(amount);
+  currentAccount.movements.push({ amount: amount, date: new Date() });
 
   // Actualizar UI
   updateUI(currentAccount);
