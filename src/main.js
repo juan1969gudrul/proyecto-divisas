@@ -57,7 +57,7 @@ document.querySelector("#app").innerHTML = `
         <p class="summary__value summary__value--out">0000€</p>
         <p class="summary__label">Interest</p>
         <p class="summary__value summary__value--interest">0000€</p>
-        <button class="btn--sort">&downarrow; SORT</button>
+        <button class="btn--sort">&downarrow; ORDENAR POR FECHA</button>
       </div>
       <!-- OPERATION: TRANSFERS -->
       <div class="operation operation--transfer">
@@ -108,13 +108,18 @@ const labelSumIn = document.querySelector(".summary__value--in");
 const labelSumOut = document.querySelector(".summary__value--out");
 const labelSumInterest = document.querySelector(".summary__value--interest");
 const labelTimer = document.querySelector(".timer");
+
 const containerApp = document.querySelector(".app");
 const containerMovements = document.querySelector(".movements");
+
 const btnLogin = document.querySelector(".login__btn");
 const btnTransfer = document.querySelector(".form__btn--transfer");
 const btnLoan = document.querySelector(".form__btn--loan");
 const btnClose = document.querySelector(".form__btn--close");
 const btnSort = document.querySelector(".btn--sort");
+
+console.log('Botón de ordenar encontrado:', btnSort); // Para debug
+
 const inputLoginUsername = document.querySelector(".login__input--user");
 const inputLoginPin = document.querySelector(".login__input--pin");
 const inputTransferTo = document.querySelector(".form__input--to");
@@ -165,11 +170,36 @@ btnLogin.addEventListener("click", function (e) {
   // .find((account) => account.pin === inputPin);
   // lo anterior no funciona porque account ya es un array
   if (currentAccount && currentAccount.pin === inputPin) {
-    // MÁS CONCISO:  if (account?.pin === inputPin) {
     // si el usuario y el pin son correctos
     // mensaje de bienvenida y que se vea la aplicación
     containerApp.style.opacity = 1;
-    labelWelcome.textContent = `Welcome back, ${currentAccount.owner.split(" ")[0]}`;
+    
+    // Obtener la fecha de la última actualización (último movimiento)
+    const lastUpdate = currentAccount.movements.length > 0 
+      ? currentAccount.movements[currentAccount.movements.length - 1].date
+      : new Date();
+    
+    // Mostrar mensaje de bienvenida con información de última actualización
+    const lastUpdateFormatted = formatDate(lastUpdate);
+    labelWelcome.textContent = `Bienvenido/a de nuevo, ${
+      currentAccount.owner.split(" ")[0]
+    }. Última actualización: ${lastUpdateFormatted}`;
+
+    // Mostrar alerta con los últimos movimientos
+    const lastMovements = currentAccount.movements.slice(-3).reverse();
+    if (lastMovements.length > 0) {
+      const movementsMessage = lastMovements
+        .map(mov => {
+          const type = mov.amount > 0 ? 'ingreso' : 'retiro';
+          const amount = Math.abs(mov.amount).toFixed(2);
+          const date = formatDate(mov.date);
+          return `${type} de ${amount}€ (${date})`;
+        })
+        .join('\n');
+      
+      alert(`Últimos movimientos:\n${movementsMessage}`);
+    }
+
     // limpiar formulario
     inputLoginUsername.value = inputLoginPin.value = "";
     // cargar los datos (movimientos de la cuenta)
@@ -188,27 +218,32 @@ const updateUI = function (account) {
   // ingresos y gastos
   displaySummary(account.movements);
 };
-const displayMovements = function (movements) {
+const displayMovements = function (movements, sort = false) {
   // vaciamos el HTML
   containerMovements.innerHTML = "";
+  
+  // Ordenar los movimientos si sort es true
+  const movsToDisplay = sort 
+    ? [...movements].sort((a, b) => new Date(b.date) - new Date(a.date))
+    : movements;
+
   // recorremos el array de movimientos
-  movements.forEach((mov, i) => {
+  movsToDisplay.forEach((mov, i) => {
     // creamos el html para cada movimiento y lo guardamos en una variable
     const type = mov.amount > 0 ? "deposit" : "withdrawal";
     
     const date = formatDate(mov.date);
 
-    // creamos el HTML
     const html = `
       <div class="movements__row">
-        <div class="movements__type movements__type--${type}">${i + 1} ${
-      type === "withdrawal" ? "withdrawal" : "deposit"
-    }</div>
+        <div class="movements__type movements__type--${type}">
+          ${i + 1} ${type}
+        </div>
         <div class="movements__date">${date}</div>
         <div class="movements__value">${mov.amount.toFixed(2)}€</div>
       </div>
     `;
-    // insertamos el HTML en el DOM
+    // insertamos el html al principio del contenedor
     containerMovements.insertAdjacentHTML("afterbegin", html);
   });
 };
@@ -258,6 +293,9 @@ btnTransfer.addEventListener('click', function (e) {
     currentAccount.movements.push({ amount: -amount, date: new Date() });
     receiverAccount.movements.push({ amount: amount, date: new Date() });
 
+    // Mostrar mensaje de confirmación
+    alert(`Transferencia realizada con éxito: ${amount.toFixed(2)}€ transferidos a ${receiverAccount.owner}`);
+
     // Actualizar UI
     updateUI(currentAccount);
   } else {
@@ -301,29 +339,68 @@ btnLoan.addEventListener('click', function (e) {
 
   // Actualizar UI
   updateUI(currentAccount);
-  alert('Préstamo aprobado y depositado en tu cuenta');
+  alert(`Préstamo aprobado: ${amount.toFixed(2)}€ han sido depositados en tu cuenta.\nTu nuevo balance es: ${currentAccount.movements.reduce((acc, mov) => acc + mov.amount, 0).toFixed(2)}€`);
 });
+
+// Variable para almacenar las cuentas eliminadas y evitar su reutilización
+const deletedAccounts = new Set();
 
 // Implementar cierre de cuenta
 btnClose.addEventListener("click", function (e) {
   e.preventDefault();
 
+  const closeUsername = inputCloseUsername.value;
+  const closePin = Number(inputClosePin.value);
+
   // Verificar credenciales
-  if (
-    inputCloseUsername.value === currentAccount.username &&
-    Number(inputClosePin.value) === currentAccount.pin
-  ) {
-    // Encontrar el índice de la cuenta en el array de cuentas
-    const index = accounts.findIndex(
-      acc => acc.username === currentAccount.username
-    );
-
-    // Eliminar la cuenta del array
-    accounts.splice(index, 1);
-
-    // Ocultar UI y limpiar campos
-    containerApp.style.opacity = 0;
-    labelWelcome.textContent = 'Log in to get started';
+  if (closeUsername === currentAccount.username && closePin === currentAccount.pin) {
+    // Confirmar la cancelación
+    const confirmar = confirm('¿Estás seguro de que deseas cancelar tu cuenta? Esta acción no se puede deshacer.');
+    
+    if (confirmar) {
+      // Encontrar el índice de la cuenta en el array
+      const index = accounts.findIndex(acc => acc.username === currentAccount.username);
+      
+      if (index !== -1) {
+        // Eliminar la cuenta del array de cuentas disponibles
+        accounts.splice(index, 1);
+        
+        // Añadir el username a la lista de cuentas eliminadas
+        deletedAccounts.add(closeUsername);
+        
+        // Ocultar UI y limpiar campos
+        containerApp.style.opacity = 0;
+        labelWelcome.textContent = 'Cliente eliminado';
+        inputCloseUsername.value = inputClosePin.value = '';
+        
+        // Limpiar la cuenta actual
+        currentAccount = null;
+        
+        alert('Cliente eliminado. Tu cuenta ha sido cancelada permanentemente.');
+      }
+    }
+  } else {
+    alert('Credenciales incorrectas. No se puede cancelar la cuenta.');
     inputCloseUsername.value = inputClosePin.value = '';
   }
+});
+
+// Variable para mantener el estado de ordenación
+let sorted = false;
+
+btnSort.addEventListener('click', function(e) {
+  e.preventDefault();
+  console.log('Botón de ordenar clickeado'); // Para debug
+  
+  sorted = !sorted;
+  displayMovements(currentAccount.movements, sorted);
+  
+  // Actualizar el texto del botón y cambiar la clase
+  btnSort.innerHTML = sorted 
+    ? '&uparrow; ORDENAR POR FECHA ASCENDENTE' 
+    : '&downarrow; ORDENAR POR FECHA DESCENDENTE';
+  
+  // Alternar la clase para el color
+  btnSort.classList.toggle('btn--sort-asc', sorted);
+  btnSort.classList.toggle('btn--sort-desc', !sorted);
 });
