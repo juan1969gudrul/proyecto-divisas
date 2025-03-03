@@ -197,6 +197,7 @@ nav {
   color: #f5465d;
 }
 
+/* Estilos para el botón de ordenamiento */
 .btn--sort {
   margin-left: auto;
   border: none;
@@ -215,6 +216,20 @@ nav {
   background: linear-gradient(to bottom right, #7d3c98, #884ea0);
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(142, 68, 173, 0.3);
+}
+
+.btn--sort {
+  transition: all 0.3s;
+}
+
+.btn--sort-asc {
+  background-color: #39b385 !important;
+  color: #fff !important;
+}
+
+.btn--sort-desc {
+  background-color: #ff585f !important;
+  color: #fff !important;
 }
 
 /* Estilo para orden descendente (más reciente primero) - tonos verdes */

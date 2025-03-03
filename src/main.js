@@ -1,106 +1,84 @@
 import "./style.css";
 import accounts from "./accounts.js";
+// PUNTO 6: Mostrar fechas con texto del tipo "hace 2 días"
+// Implementación: Usamos date-fns en lugar de moment.js para el formato relativo de fechas
 import { formatDistanceToNow, format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
+// Estructura básica de la aplicación
 document.querySelector("#app").innerHTML = `
     <nav>
-      <p class="welcome">Log in to get started</p>
+      <p class="welcome">Inicia sesión para comenzar</p>
       <img src="logo.png" alt="Logo" class="logo" />
-      <form class="login" >
-        <input
-          type="text"
-          placeholder="user"
-          class="login__input login__input--user"
-        />
-        <!-- In practice, use type="password" -->
-        <input
-          type="text"
-          placeholder="PIN"
-          maxlength="4"
-          class="login__input login__input--pin"
-        />
+      <form class="login">
+        <input type="text" placeholder="usuario" class="login__input login__input--user" />
+        <input type="text" placeholder="PIN" maxlength="4" class="login__input login__input--pin" />
         <button class="login__btn">&rarr;</button>
       </form>
     </nav>
     <main class="app">
-      <!-- BALANCE -->
+      <!-- Balance -->
       <div class="balance">
         <div>
-          <p class="balance__label">Current balance</p>
+          <p class="balance__label">Saldo actual</p>
           <p class="balance__date">
-            As of <span class="date">05/03/2037</span>
+            A fecha de <span class="date">05/03/2037</span>
           </p>
         </div>
         <p class="balance__value">0000€</p>
       </div>
-      <!-- MOVEMENTS -->
+      <!-- Movimientos -->
       <div class="movements">
-        <div class="movements__row">
-          <div class="movements__type movements__type--deposit">2 deposit</div>
-          <div class="movements__date">3 days ago</div>
-          <div class="movements__value">4 000€</div>
-        </div>
-        <div class="movements__row">
-          <div class="movements__type movements__type--withdrawal">
-            1 withdrawal
-          </div>
-          <div class="movements__date">24/01/2037</div>
-          <div class="movements__value">-378€</div>
-        </div>
       </div>
-      <!-- SUMMARY -->
+      <!-- Resumen -->
       <div class="summary">
-        <p class="summary__label">In</p>
+        <p class="summary__label">Ingresos</p>
         <p class="summary__value summary__value--in">0000€</p>
-        <p class="summary__label">Out</p>
+        <p class="summary__label">Gastos</p>
         <p class="summary__value summary__value--out">0000€</p>
-        <p class="summary__label">Interest</p>
+        <p class="summary__label">Interés</p>
         <p class="summary__value summary__value--interest">0000€</p>
         <button class="btn--sort">&downarrow; ORDENAR POR FECHA</button>
       </div>
-      <!-- OPERATION: TRANSFERS -->
+      <!-- Operación: Transferencias -->
       <div class="operation operation--transfer">
-        <h2>Transfer money</h2>
+        <h2>Transferir dinero</h2>
         <form class="form form--transfer">
           <input type="text" class="form__input form__input--to" />
           <input type="number" class="form__input form__input--amount" />
           <button class="form__btn form__btn--transfer">&rarr;</button>
-          <label class="form__label">Transfer to</label>
-          <label class="form__label">Amount</label>
+          <label class="form__label">Transferir a</label>
+          <label class="form__label">Cantidad</label>
         </form>
       </div>
-      <!-- OPERATION: LOAN -->
+      <!-- Operación: Préstamo -->
       <div class="operation operation--loan">
-        <h2>Request loan</h2>
+        <h2>Solicitar préstamo</h2>
         <form class="form form--loan">
           <input type="number" class="form__input form__input--loan-amount" />
           <button class="form__btn form__btn--loan">&rarr;</button>
-          <label class="form__label form__label--loan">Amount</label>
+          <label class="form__label form__label--loan">Cantidad</label>
         </form>
       </div>
-      <!-- OPERATION: CLOSE -->
+      <!-- Operación: Cerrar cuenta -->
       <div class="operation operation--close">
-        <h2>Close account</h2>
+        <h2>Cerrar cuenta</h2>
         <form class="form form--close">
           <input type="text" class="form__input form__input--user" />
-          <input
-            type="password"
-            maxlength="6"
-            class="form__input form__input--pin"
-          />
+          <input type="password" maxlength="6" class="form__input form__input--pin" />
           <button class="form__btn form__btn--close">&rarr;</button>
-          <label class="form__label">Confirm user</label>
-          <label class="form__label">Confirm PIN</label>
+          <label class="form__label">Confirmar usuario</label>
+          <label class="form__label">Confirmar PIN</label>
         </form>
       </div>
-      <!-- LOGOUT TIMER -->
+      <!-- Temporizador de cierre de sesión -->
       <p class="logout-timer">
-        You will be logged out in <span class="timer">05:00</span>
+        Se cerrará la sesión en <span class="timer">05:00</span>
       </p>
     </main>
 `;
-// Elements
+
+// Elementos del DOM
 const labelWelcome = document.querySelector(".welcome");
 const labelDate = document.querySelector(".date");
 const labelBalance = document.querySelector(".balance__value");
@@ -118,8 +96,6 @@ const btnLoan = document.querySelector(".form__btn--loan");
 const btnClose = document.querySelector(".form__btn--close");
 const btnSort = document.querySelector(".btn--sort");
 
-console.log('Botón de ordenar encontrado:', btnSort); // Para debug
-
 const inputLoginUsername = document.querySelector(".login__input--user");
 const inputLoginPin = document.querySelector(".login__input--pin");
 const inputTransferTo = document.querySelector(".form__input--to");
@@ -127,280 +103,256 @@ const inputTransferAmount = document.querySelector(".form__input--amount");
 const inputLoanAmount = document.querySelector(".form__input--loan-amount");
 const inputCloseUsername = document.querySelector(".form__input--user");
 const inputClosePin = document.querySelector(".form__input--pin");
-// creamos el campo username para todas las cuentas de usuarios
-// usamos forEach para modificar el array original, en otro caso map
+
+// Función para crear nombres de usuario (iniciales en minúsculas)
 const createUsernames = function (accounts) {
   accounts.forEach(function (account) {
-    account.username = account.owner // Juan Sanchez
-      .toLowerCase() //  juan sanchez
-      .split(" ") // ['juan', 'sanchez']
-      .map((name) => name[0]) // ['j', 's']
-      .join(""); // js
+    account.username = account.owner
+      .toLowerCase()
+      .split(" ")
+      .map((name) => name[0])
+      .join("");
   });
 };
 createUsernames(accounts);
+
 let currentAccount;
 
+// PUNTO 6: Función para formatear fechas en formato relativo
 const formatDate = function(date) {
-  // Para fechas recientes, mostrar "hace X tiempo"
   const relativeTime = formatDistanceToNow(date, { 
     locale: es,
     addSuffix: true 
   });
 
-  // Para el formato completo de fecha y hora
   const fullDate = format(date, "d 'de' MMMM 'de' yyyy, HH:mm", {
     locale: es
   });
 
-  // Si la fecha es de hace menos de 7 días, mostrar el tiempo relativo
   const daysDiff = Math.round((new Date() - date) / (1000 * 60 * 60 * 24));
   return daysDiff <= 7 ? relativeTime : fullDate;
 };
 
-btnLogin.addEventListener("click", function (e) {
-  // evitar que el formulario se envíe
-  e.preventDefault();
-  // recojo el username y el pin y los comparo con los datos de las cuentas
-  const inputUsername = inputLoginUsername.value;
-  const inputPin = Number(inputLoginPin.value);
-  currentAccount = accounts.find(
-    (account) => account.username === inputUsername
-  );
-  // .find((account) => account.pin === inputPin);
-  // lo anterior no funciona porque account ya es un array
-  if (currentAccount && currentAccount.pin === inputPin) {
-    // si el usuario y el pin son correctos
-    // mensaje de bienvenida y que se vea la aplicación
-    containerApp.style.opacity = 1;
-    
-    // Obtener la fecha de la última actualización (último movimiento)
-    const lastUpdate = currentAccount.movements.length > 0 
-      ? currentAccount.movements[currentAccount.movements.length - 1].date
-      : new Date();
-    
-    // Mostrar mensaje de bienvenida con información de última actualización
-    const lastUpdateFormatted = formatDate(lastUpdate);
-    labelWelcome.textContent = `Bienvenido/a de nuevo, ${
-      currentAccount.owner.split(" ")[0]
-    }. Última actualización: ${lastUpdateFormatted}`;
-
-    // Mostrar alerta con los últimos movimientos
-    const lastMovements = currentAccount.movements.slice(-3).reverse();
-    if (lastMovements.length > 0) {
-      const movementsMessage = lastMovements
-        .map(mov => {
-          const type = mov.amount > 0 ? 'ingreso' : 'retiro';
-          const amount = Math.abs(mov.amount).toFixed(2);
-          const date = formatDate(mov.date);
-          return `${type} de ${amount}€ (${date})`;
-        })
-        .join('\n');
-      
-      alert(`Últimos movimientos:\n${movementsMessage}`);
+// PUNTO 7: Poder ordenar el listado de movimientos en función de la fecha
+// Implementación: Función para ordenar movimientos ascendente o descendente
+const sortMovements = (movements, ascending = false) => {
+  return [...movements].sort((a, b) => {
+    if (ascending) {
+      return new Date(a.date) - new Date(b.date);
+    } else {
+      return new Date(b.date) - new Date(a.date);
     }
-
-    // limpiar formulario
-    inputLoginUsername.value = inputLoginPin.value = "";
-    // cargar los datos (movimientos de la cuenta)
-    updateUI(currentAccount);
-  } else {
-    console.log("login incorrecto");
-  }
-});
-const updateUI = function (account) {
-  // const {movements} = account.movements
-  // mostrar los movimientos de la cuenta
-  displayMovements(account.movements);
-  // mostrar el balance de la cuenta
-  displayBalance(account.movements);
-  // mostrar el total de los movimientos de la cuenta
-  // ingresos y gastos
-  displaySummary(account.movements);
+  });
 };
-const displayMovements = function (movements, sort = false) {
-  // vaciamos el HTML
-  containerMovements.innerHTML = "";
-  
-  // Ordenar los movimientos si sort es true
-  const movsToDisplay = sort 
-    ? [...movements].sort((a, b) => new Date(b.date) - new Date(a.date))
-    : movements;
 
-  // recorremos el array de movimientos
-  movsToDisplay.forEach((mov, i) => {
-    // creamos el html para cada movimiento y lo guardamos en una variable
-    const type = mov.amount > 0 ? "deposit" : "withdrawal";
-    
-    const date = formatDate(mov.date);
+let isMovementsSorted = false;
+
+// Función para mostrar los movimientos en la UI con fechas relativas
+const displayMovements = function (account, sort = false) {
+  containerMovements.innerHTML = '';
+  
+  const movsToDisplay = sort ? sortMovements(account.movements, isMovementsSorted) : account.movements;
+  
+  movsToDisplay.forEach(function (mov, i) {
+    const type = mov.amount > 0 ? 'deposit' : 'withdrawal';
+    const formattedDate = formatDate(mov.date);
 
     const html = `
       <div class="movements__row">
         <div class="movements__type movements__type--${type}">
-          ${i + 1} ${type}
+          ${type === 'deposit' ? 'Depósito' : 'Retiro'}
         </div>
-        <div class="movements__date">${date}</div>
+        <div class="movements__date">${formattedDate}</div>
         <div class="movements__value">${mov.amount.toFixed(2)}€</div>
       </div>
     `;
-    // insertamos el html al principio del contenedor
-    containerMovements.insertAdjacentHTML("afterbegin", html);
+    containerMovements.insertAdjacentHTML('afterbegin', html);
   });
 };
-const displayBalance = function (movements) {
-  // calculamos suma de ingresos y retiradas de efectivo
-  const balance = movements.reduce((total, movement) => total + movement.amount, 0);
-  // actualizamos el DOM:
-  labelBalance.textContent = `${balance.toFixed(2)} €`;
 
-  // Actualizar la fecha del balance con formato completo
-  labelDate.textContent = format(new Date(), "'Actualizado el' d 'de' MMMM 'de' yyyy, HH:mm", {
-    locale: es
-  });
-};
-const displaySummary = function (movements) {
-  const sumIn = movements
-    .filter((movement) => movement.amount > 0)
-    .reduce((total, movement) => total + movement.amount, 0);
-  labelSumIn.textContent = `${sumIn.toFixed(2)} €`;
+// Función para actualizar toda la UI
+const updateUI = function (account) {
+  if (!account) return;
   
-  const sumOut = movements
-    .filter((movement) => movement.amount < 0)
-    .reduce((total, movement) => total + movement.amount, 0);
-  labelSumOut.textContent = `${Math.abs(sumOut).toFixed(2)} €`;
+  // Mostrar movimientos
+  displayMovements(account);
+  
+  // Mostrar balance
+  const balance = account.movements.reduce((acc, mov) => acc + mov.amount, 0);
+  labelBalance.textContent = `${balance.toFixed(2)}€`;
+  
+  // Mostrar resumen
+  const incomes = account.movements
+    .filter(mov => mov.amount > 0)
+    .reduce((acc, mov) => acc + mov.amount, 0);
+  labelSumIn.textContent = `${incomes.toFixed(2)}€`;
+  
+  const outcomes = account.movements
+    .filter(mov => mov.amount < 0)
+    .reduce((acc, mov) => acc + mov.amount, 0);
+  labelSumOut.textContent = `${Math.abs(outcomes).toFixed(2)}€`;
+  
+  const interest = account.movements
+    .filter(mov => mov.amount > 0)
+    .map(deposit => (deposit.amount * account.interestRate) / 100)
+    .filter(int => int >= 1)
+    .reduce((acc, int) => acc + int, 0);
+  labelSumInterest.textContent = `${interest.toFixed(2)}€`;
 };
 
-// Implementar transferencias
-btnTransfer.addEventListener('click', function (e) {
-  e.preventDefault();
+// Event Handlers
 
-  const amount = Number(inputTransferAmount.value);
-  const receiverAccount = accounts.find(
-    acc => acc.username === inputTransferTo.value
+// Login
+btnLogin.addEventListener("click", function (e) {
+  e.preventDefault();
+  
+  // Buscar la cuenta por nombre de usuario
+  currentAccount = accounts.find(
+    acc => acc.username === inputLoginUsername.value
   );
 
-  // Limpiar campos del formulario
-  inputTransferAmount.value = inputTransferTo.value = '';
+  // Verificar PIN
+  if (currentAccount?.pin === Number(inputLoginPin.value)) {
+    // Mostrar UI y mensaje de bienvenida
+    labelWelcome.textContent = `Bienvenido/a, ${currentAccount.owner.split(' ')[0]}`;
+    containerApp.style.opacity = 100;
 
-  // Validaciones
-  if (
-    amount > 0 && // Validar que la cantidad sea positiva
-    receiverAccount && // Validar que la cuenta destino exista
-    currentAccount.movements.reduce((acc, mov) => acc + mov.amount, 0) >= amount && // Validar saldo suficiente
-    receiverAccount?.username !== currentAccount.username // Validar que no sea transferencia a sí mismo
-  ) {
-    // Realizar la transferencia
-    currentAccount.movements.push({ amount: -amount, date: new Date() });
-    receiverAccount.movements.push({ amount: amount, date: new Date() });
-
-    // Mostrar mensaje de confirmación
-    alert(`Transferencia realizada con éxito: ${amount.toFixed(2)}€ transferidos a ${receiverAccount.owner}`);
+    // Limpiar campos de entrada
+    inputLoginUsername.value = inputLoginPin.value = '';
+    inputLoginPin.blur();
 
     // Actualizar UI
     updateUI(currentAccount);
   } else {
-    // Mostrar mensaje de error según el caso
-    if (amount <= 0) {
-      alert('La cantidad debe ser positiva');
-    } else if (!receiverAccount) {
-      alert('La cuenta destino no existe');
-    } else if (currentAccount.movements.reduce((acc, mov) => acc + mov.amount, 0) < amount) {
-      alert('No tienes suficiente saldo');
-    } else if (receiverAccount.username === currentAccount.username) {
-      alert('No puedes transferir dinero a tu propia cuenta');
-    }
+    alert('Usuario o PIN incorrectos');
   }
 });
 
-// Implementar solicitud de préstamo
+// PUNTO 2: Se realizan transferencias de dinero de forma satisfactoria
+// Implementación: Control completo de transferencias con validaciones
+btnTransfer.addEventListener('click', function (e) {
+  e.preventDefault();
+  const amount = Number(inputTransferAmount.value);
+  const receiverAcc = accounts.find(
+    acc => acc.username === inputTransferTo.value
+  );
+
+  // Validaciones requeridas en el punto 2
+  if (amount <= 0) {
+    alert('❌ Error: La cantidad debe ser positiva');
+    return;
+  }
+
+  if (!receiverAcc) {
+    alert('❌ Error: La cuenta destino no existe');
+    return;
+  }
+
+  if (receiverAcc?.username === currentAccount.username) {
+    alert('❌ Error: No puedes transferir dinero a tu propia cuenta');
+    return;
+  }
+
+  const currentBalance = currentAccount.movements.reduce((acc, mov) => acc + mov.amount, 0);
+  if (currentBalance < amount) {
+    alert(`❌ Error: Saldo insuficiente\nTu saldo actual es: ${currentBalance.toFixed(2)}€`);
+    return;
+  }
+
+  // PUNTO 4: Implementa los movimientos como objetos con fecha
+  currentAccount.movements.push({
+    amount: -amount,
+    date: new Date()
+  });
+
+  receiverAcc.movements.push({
+    amount: amount,
+    date: new Date()
+  });
+
+  updateUI(currentAccount);
+  inputTransferAmount.value = inputTransferTo.value = '';
+  
+  alert(`✅ Transferencia realizada con éxito\n
+• Cantidad: ${amount.toFixed(2)}€
+• Destinatario: ${receiverAcc.owner}
+• Nuevo saldo: ${currentBalance - amount}€`);
+});
+
+// PUNTO 3: Se solicita un prestamo y se actualizan los datos en la pantalla
+// Implementación: Validación de préstamos con límite del 200%
 btnLoan.addEventListener('click', function (e) {
   e.preventDefault();
-
-  const amount = Number(inputLoanAmount.value);
+  const amount = Math.floor(Number(inputLoanAmount.value));
   const currentBalance = currentAccount.movements.reduce((acc, mov) => acc + mov.amount, 0);
   const maxLoanAmount = currentBalance * 2; // 200% del balance actual
 
-  // Limpiar campo del formulario
-  inputLoanAmount.value = '';
-
-  // Validaciones
   if (amount <= 0) {
-    alert('La cantidad solicitada debe ser positiva');
+    alert('❌ Error: La cantidad solicitada debe ser positiva');
     return;
   }
 
   if (amount > maxLoanAmount) {
-    alert(`El préstamo máximo permitido es de ${maxLoanAmount.toFixed(2)}€ (200% de tu balance actual)`);
+    alert(`❌ Error: Préstamo denegado\n
+• Tu saldo actual: ${currentBalance.toFixed(2)}€
+• Préstamo máximo (200%): ${maxLoanAmount.toFixed(2)}€
+• Cantidad solicitada: ${amount.toFixed(2)}€`);
     return;
   }
 
-  // Aprobar y procesar el préstamo
-  currentAccount.movements.push({ amount: amount, date: new Date() });
+  // PUNTO 4: Movimiento del préstamo como objeto con fecha
+  currentAccount.movements.push({
+    amount: amount,
+    date: new Date()
+  });
 
-  // Actualizar UI
   updateUI(currentAccount);
-  alert(`Préstamo aprobado: ${amount.toFixed(2)}€ han sido depositados en tu cuenta.\nTu nuevo balance es: ${currentAccount.movements.reduce((acc, mov) => acc + mov.amount, 0).toFixed(2)}€`);
+  inputLoanAmount.value = '';
+
+  alert(`✅ Préstamo aprobado\n
+• Cantidad prestada: ${amount.toFixed(2)}€
+• Límite disponible: ${maxLoanAmount.toFixed(2)}€
+• Nuevo saldo: ${currentBalance + amount}€`);
 });
 
-// Variable para almacenar las cuentas eliminadas y evitar su reutilización
-const deletedAccounts = new Set();
-
-// Implementar cierre de cuenta
-btnClose.addEventListener("click", function (e) {
+// PUNTO 1: Implementa la funcionalidad "Close Account"
+// Implementación: Eliminar cuenta y prevenir acceso futuro
+btnClose.addEventListener('click', function (e) {
   e.preventDefault();
 
-  const closeUsername = inputCloseUsername.value;
-  const closePin = Number(inputClosePin.value);
-
-  // Verificar credenciales
-  if (closeUsername === currentAccount.username && closePin === currentAccount.pin) {
-    // Confirmar la cancelación
-    const confirmar = confirm('¿Estás seguro de que deseas cancelar tu cuenta? Esta acción no se puede deshacer.');
+  if (
+    inputCloseUsername.value === currentAccount.username &&
+    Number(inputClosePin.value) === currentAccount.pin
+  ) {
+    const index = accounts.findIndex(
+      acc => acc.username === currentAccount.username
+    );
     
-    if (confirmar) {
-      // Encontrar el índice de la cuenta en el array
-      const index = accounts.findIndex(acc => acc.username === currentAccount.username);
-      
-      if (index !== -1) {
-        // Eliminar la cuenta del array de cuentas disponibles
-        accounts.splice(index, 1);
-        
-        // Añadir el username a la lista de cuentas eliminadas
-        deletedAccounts.add(closeUsername);
-        
-        // Ocultar UI y limpiar campos
-        containerApp.style.opacity = 0;
-        labelWelcome.textContent = 'Cliente eliminado';
-        inputCloseUsername.value = inputClosePin.value = '';
-        
-        // Limpiar la cuenta actual
-        currentAccount = null;
-        
-        alert('Cliente eliminado. Tu cuenta ha sido cancelada permanentemente.');
-      }
-    }
+    // Eliminar la cuenta del array de cuentas
+    accounts.splice(index, 1);
+    
+    // Ocultar UI y mostrar mensaje
+    containerApp.style.opacity = 0;
+    labelWelcome.textContent = 'Cuenta cerrada. Inicia sesión con otra cuenta';
+    
+    alert('✅ Cuenta cerrada correctamente\nTu cuenta ha sido eliminada del sistema.');
   } else {
-    alert('Credenciales incorrectas. No se puede cancelar la cuenta.');
-    inputCloseUsername.value = inputClosePin.value = '';
+    alert('❌ Error: Credenciales incorrectas');
   }
+
+  inputCloseUsername.value = inputClosePin.value = '';
 });
 
-// Variable para mantener el estado de ordenación
-let sorted = false;
-
-btnSort.addEventListener('click', function(e) {
+// PUNTO 7: Ordenar movimientos por fecha
+btnSort.addEventListener('click', function (e) {
   e.preventDefault();
-  console.log('Botón de ordenar clickeado'); // Para debug
+  isMovementsSorted = !isMovementsSorted;
+  displayMovements(currentAccount, true);
   
-  sorted = !sorted;
-  displayMovements(currentAccount.movements, sorted);
+  btnSort.innerHTML = isMovementsSorted 
+    ? '&uparrow; ORDENAR POR FECHA' 
+    : '&downarrow; ORDENAR POR FECHA';
   
-  // Actualizar el texto del botón y cambiar la clase
-  btnSort.innerHTML = sorted 
-    ? '&uparrow; ORDENAR POR FECHA ASCENDENTE' 
-    : '&downarrow; ORDENAR POR FECHA DESCENDENTE';
-  
-  // Alternar la clase para el color
-  btnSort.classList.toggle('btn--sort-asc', sorted);
-  btnSort.classList.toggle('btn--sort-desc', !sorted);
+  btnSort.classList.toggle('btn--sort-asc', isMovementsSorted);
+  btnSort.classList.toggle('btn--sort-desc', !isMovementsSorted);
 });
