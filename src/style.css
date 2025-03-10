@@ -278,6 +278,23 @@ nav {
   background-image: linear-gradient(to top left, #e52a5a, #ff585f);
 }
 
+/* MODIFICADO: Cambio del color de fondo a azul */
+.operation--currency {
+  background-image: linear-gradient(to top left, #2196F3, #03A9F4);
+}
+
+.currency__result {
+  font-size: 1.4rem;
+  margin-top: 1.5rem;
+  text-align: center;
+  color: #fff;
+}
+
+.currency__value {
+  font-weight: 600;
+  font-size: 1.6rem;
+}
+
 h2 {
   margin-bottom: 1.5rem;
   font-size: 1.7rem;
@@ -301,6 +318,14 @@ h2 {
 }
 /* End exceptions */
 
+/* MODIFICADO: Ajuste del grid para los campos de selección de divisas más largos */
+.form.form--currency {
+  display: grid;
+  grid-template-columns: 2fr 1.5fr 1.5fr 1fr;
+  grid-template-rows: auto auto;
+  gap: 0.4rem 1rem;
+}
+
 .form__input {
   width: 100%;
   border: none;
@@ -314,6 +339,24 @@ h2 {
   transition: all 0.3s;
 }
 
+/* MODIFICADO: Cambios en los campos de selección de divisas */
+.form__input--from-currency,
+.form__input--to-currency {
+  font-size: 1.8rem;
+  padding: 1rem 2rem;
+  height: 4rem;
+  width: 100%;
+  min-width: 12rem;
+  text-align: center;
+  background-color: rgba(255, 255, 255, 0.6);
+}
+
+.form__input--from-currency option,
+.form__input--to-currency option {
+  font-size: 1.6rem;
+  padding: 0.5rem;
+}
+
 .form__input:focus {
   outline: none;
   background-color: rgba(255, 255, 255, 0.6);
@@ -322,6 +365,14 @@ h2 {
 .form__label {
   font-size: 1.3rem;
   text-align: center;
+}
+
+.conversion-result {
+  grid-column: 1 / span 4;
+  font-size: 1.8rem;
+  text-align: center;
+  margin-top: 1rem;
+  color: #333;
 }
 
 .form__btn {

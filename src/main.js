@@ -71,6 +71,30 @@ document.querySelector("#app").innerHTML = `
           <label class="form__label">Confirmar PIN</label>
         </form>
       </div>
+      <!-- Operación: Cambio de divisas -->
+      <div class="operation operation--currency">
+        <h2>Cambio de divisas</h2>
+        <form class="form form--currency">
+          <input type="number" class="form__input form__input--amount-currency" />
+          <select class="form__input form__input--from-currency">
+            <option value="EUR">EUR</option>
+            <option value="USD">USD</option>
+            <option value="GBP">GBP</option>
+            <option value="JPY">JPY</option>
+          </select>
+          <select class="form__input form__input--to-currency">
+            <option value="USD">USD</option>
+            <option value="EUR">EUR</option>
+            <option value="GBP">GBP</option>
+            <option value="JPY">JPY</option>
+          </select>
+          <button class="form__btn form__btn--currency">&rarr;</button>
+          <label class="form__label">Cantidad</label>
+          <label class="form__label">De</label>
+          <label class="form__label">A</label>
+          <p class="currency__result">Resultado: <span class="currency__value">0.00</span></p>
+        </form>
+      </div>
       <!-- Temporizador de cierre de sesión -->
       <p class="logout-timer">
         Se cerrará la sesión en <span class="timer">05:00</span>
@@ -99,6 +123,11 @@ const btnSort = document.querySelector(".btn--sort");
 const inputLoginUsername = document.querySelector(".login__input--user");
 const inputLoginPin = document.querySelector(".login__input--pin");
 const inputTransferTo = document.querySelector(".form__input--to");
+const inputCurrencyAmount = document.querySelector(".form__input--amount-currency");
+const selectFromCurrency = document.querySelector(".form__input--from-currency");
+const selectToCurrency = document.querySelector(".form__input--to-currency");
+const btnCurrency = document.querySelector(".form__btn--currency");
+const labelCurrencyValue = document.querySelector(".currency__value");
 const inputTransferAmount = document.querySelector(".form__input--amount");
 const inputLoanAmount = document.querySelector(".form__input--loan-amount");
 const inputCloseUsername = document.querySelector(".form__input--user");
@@ -200,7 +229,42 @@ const updateUI = function (account) {
   labelSumInterest.textContent = `${interest.toFixed(2)}€`;
 };
 
+// Function to fetch exchange rates from ExchangeRate-API
+async function fetchExchangeRate(fromCurrency, toCurrency) {
+    const apiKey = 'eb68f542eabafec7709a1755'; // Replace with your actual API key
+    const url = `https://v6.exchangerate-api.com/v6/${apiKey}/pair/${fromCurrency}/${toCurrency}`;
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('Failed to fetch exchange rate');
+        const data = await response.json();
+        return data.conversion_rate;
+    } catch (error) {
+        console.error('Error fetching exchange rate:', error);
+        return null;
+    }
+}
+
 // Event Handlers
+
+// Cambio de divisas
+btnCurrency.addEventListener("click", async function (e) {
+    e.preventDefault();
+    const fromCurrency = selectFromCurrency.value;
+    const toCurrency = selectToCurrency.value;
+    const amount = parseFloat(inputCurrencyAmount.value);
+
+    if (!isNaN(amount) && fromCurrency && toCurrency) {
+        const rate = await fetchExchangeRate(fromCurrency, toCurrency);
+        if (rate) {
+            const convertedAmount = amount * rate;
+            labelCurrencyValue.textContent = `${convertedAmount.toFixed(2)} ${toCurrency}`;
+        } else {
+            labelCurrencyValue.textContent = 'Error fetching rate';
+        }
+    } else {
+        labelCurrencyValue.textContent = 'Invalid input';
+    }
+});
 
 // Login
 btnLogin.addEventListener("click", function (e) {
