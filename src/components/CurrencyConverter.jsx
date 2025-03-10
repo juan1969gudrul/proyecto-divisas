@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { convertCurrency } from '../apiService';
+import ExchangeRate from './ExchangeRate';
 
 const CurrencyConverter = () => {
   const [amount, setAmount] = useState('');
@@ -102,6 +103,8 @@ const CurrencyConverter = () => {
           {amount} {fromCurrency} = {result} {toCurrency}
         </div>
       )}
+
+      <ExchangeRate fromCurrency={fromCurrency} toCurrency={toCurrency} />
     </div>
   );
 };
